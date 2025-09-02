@@ -5,6 +5,7 @@ import { MessagingService } from './messaging.service';
 
 @Module({
   imports: [EmailModule],
+  controllers: [MessagingService],
   providers: [MessagingService],
   exports: [MessagingService],
 })

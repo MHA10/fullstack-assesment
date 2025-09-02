@@ -36,6 +36,16 @@ export class EmailService {
   }
 
   async sendWelcomeEmail(payload: EmailNotificationPayload): Promise<void> {
+    const startTime = Date.now();
+    const emailId = `email_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    
+    this.logger.debug(`[EMAIL_SEND] Starting email sending process [${emailId}]`);
+    this.logger.debug(`[EMAIL_SEND] Sending welcome email to: ${payload.email}`, {
+      emailId,
+      userId: payload.userId,
+      fullName: payload.fullName
+    });
+
     try {
       const mailOptions = {
         from: `${this.emailConfig.from.name} <${this.emailConfig.from.email}>`,
@@ -44,15 +54,29 @@ export class EmailService {
         html: this.generateWelcomeEmailTemplate(payload),
       };
 
+      this.logger.debug(`[EMAIL_SEND] Sending email via SMTP [${emailId}]`);
       const result = await this.transporter.sendMail(mailOptions);
+      
+      const duration = Date.now() - startTime;
       this.logger.log(
-        `Welcome email sent successfully to ${payload.email}. Message ID: ${result.messageId}`,
+        `[EMAIL_SEND] Welcome email sent successfully to ${payload.email} [${emailId}] (${duration}ms)`,
       );
+      this.logger.debug(`[EMAIL_SEND] Email delivered successfully`, {
+        emailId,
+        messageId: result.messageId,
+        duration: `${duration}ms`
+      });
     } catch (error) {
+      const duration = Date.now() - startTime;
       this.logger.error(
-        `Failed to send welcome email to ${payload.email}:`,
+        `[EMAIL_SEND] Failed to send welcome email to ${payload.email} [${emailId}] (${duration}ms):`,
         error.message,
       );
+      this.logger.error(`[EMAIL_SEND] Email error details [${emailId}]:`, {
+        errorCode: error.code,
+        errorCommand: error.command,
+        errorResponse: error.response
+      });
       throw error;
     }
   }
@@ -97,12 +121,29 @@ export class EmailService {
   }
 
   async verifyConnection(): Promise<boolean> {
+    const verificationId = `verify_${Date.now()}`;
+    this.logger.debug(`[SMTP_VERIFY] Starting SMTP connection verification [${verificationId}]`);
+    
     try {
+      const startTime = Date.now();
       await this.transporter.verify();
-      this.logger.log('SMTP connection verified successfully');
+      const duration = Date.now() - startTime;
+      
+      this.logger.log(`[SMTP_VERIFY] SMTP connection verified successfully [${verificationId}] (${duration}ms)`);
+      this.logger.debug(`[SMTP_VERIFY] SMTP configuration validated`, {
+        verificationId,
+        host: this.emailConfig.smtp.host,
+        port: this.emailConfig.smtp.port,
+        secure: this.emailConfig.smtp.secure
+      });
       return true;
     } catch (error) {
-      this.logger.error('SMTP connection verification failed:', error.message);
+      this.logger.error(`[SMTP_VERIFY] SMTP connection verification failed [${verificationId}]:`, error.message);
+      this.logger.error(`[SMTP_VERIFY] Verification error details [${verificationId}]:`, {
+        errorCode: error.code,
+        errorCommand: error.command,
+        errorResponse: error.response
+      });
       return false;
     }
   }
