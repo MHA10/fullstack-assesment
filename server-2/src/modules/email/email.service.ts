@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
-import { emailConfig } from '../../config/email.config';
+import { getEmailConfig } from '../../config/email.config';
 import { Transporter } from 'nodemailer';
 
 export interface EmailNotificationPayload {
@@ -15,14 +16,16 @@ export interface EmailNotificationPayload {
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private transporter: Transporter;
+  private emailConfig: any;
 
-  constructor() {
+  constructor(private configService: ConfigService) {
+    this.emailConfig = getEmailConfig(this.configService);
     this.initializeTransporter();
   }
 
   private initializeTransporter(): void {
     try {
-      this.transporter = nodemailer.createTransport(emailConfig.smtp);
+      this.transporter = nodemailer.createTransport(this.emailConfig.smtp);
       this.logger.log('Email transporter initialized successfully');
     } catch (error) {
       this.logger.error(
@@ -35,7 +38,7 @@ export class EmailService {
   async sendWelcomeEmail(payload: EmailNotificationPayload): Promise<void> {
     try {
       const mailOptions = {
-        from: `${emailConfig.from.name} <${emailConfig.from.email}>`,
+        from: `${this.emailConfig.from.name} <${this.emailConfig.from.email}>`,
         to: payload.email,
         subject: 'Welcome! Your account has been created successfully',
         html: this.generateWelcomeEmailTemplate(payload),

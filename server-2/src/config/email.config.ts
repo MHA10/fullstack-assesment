@@ -1,20 +1,25 @@
-export const emailConfig = {
+import { ConfigService } from '@nestjs/config';
+
+export const getEmailConfig = (configService: ConfigService) => ({
   smtp: {
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_SECURE === 'true',
+    host: configService.get<string>('SMTP_HOST', 'smtp.gmail.com'),
+    port: configService.get<number>('SMTP_PORT', 587),
+    secure: configService.get<string>('SMTP_SECURE', 'false') === 'true',
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: configService.get<string>('SMTP_USER'),
+      pass: configService.get<string>('SMTP_PASS'),
     },
   },
   from: {
-    name: process.env.SMTP_FROM_NAME || 'User Management System',
-    email: process.env.SMTP_FROM_EMAIL || 'noreply@yourcompany.com',
+    name: configService.get<string>('SMTP_FROM_NAME', 'User Management System'),
+    email: configService.get<string>(
+      'SMTP_FROM_EMAIL',
+      'noreply@yourcompany.com',
+    ),
   },
-};
+});
 
-export const rabbitmqConfig = {
-  url: process.env.RABBITMQ_URL || 'amqp://localhost:5672',
-  queue: process.env.RABBITMQ_QUEUE || 'email_notifications',
-};
+export const getRabbitmqConfig = (configService: ConfigService) => ({
+  url: configService.get<string>('RABBITMQ_URL', 'amqp://localhost:5672'),
+  queue: configService.get<string>('RABBITMQ_QUEUE', 'email_notifications'),
+});

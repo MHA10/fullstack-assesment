@@ -2,8 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
-import { rabbitmqConfig } from './config/email.config';
+import { getRabbitmqConfig } from './config/email.config';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
@@ -37,7 +38,11 @@ async function bootstrap() {
     .setVersion('1.0')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('api/docs', app, document);
+
+  // Get ConfigService and RabbitMQ config
+  const configService = app.get(ConfigService);
+  const rabbitmqConfig = getRabbitmqConfig(configService);
 
   // Connect microservice for RabbitMQ
   app.connectMicroservice<MicroserviceOptions>({
@@ -59,7 +64,9 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   await app.listen(port);
   logger.log(`Email service HTTP server running on port ${port}`);
-  logger.log(`Swagger documentation available at http://localhost:${port}/api`);
+  logger.log(
+    `Swagger documentation available at http://localhost:${port}/api/docs`,
+  );
 }
 
 bootstrap().catch((error) => {

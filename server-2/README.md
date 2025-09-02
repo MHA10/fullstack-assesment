@@ -110,7 +110,7 @@ npm run start:debug
 
 ### Documentation
 
-- `GET /api` - Swagger API documentation
+- `GET /api/docs` - Swagger API documentation
 
 ## Email Templates
 
