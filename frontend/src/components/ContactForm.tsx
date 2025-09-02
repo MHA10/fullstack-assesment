@@ -102,7 +102,7 @@ const ContactForm: React.FC = () => {
         setSubmitStatus('error');
         setSubmitMessage(errorData.message || 'Failed to send message. Please try again.');
       }
-    } catch (error) {
+    } catch {
       setSubmitStatus('error');
       setSubmitMessage('Network error. Please check your connection and try again.');
     } finally {
