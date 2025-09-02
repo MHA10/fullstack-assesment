@@ -72,9 +72,6 @@ A robust NestJS-based backend service for user management with email notificatio
    
    # On Ubuntu/Debian
    sudo systemctl start rabbitmq-server
-   
-   # Using Docker
-   docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
    ```
 
 ## Running the Application

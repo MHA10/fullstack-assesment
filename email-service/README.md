@@ -181,18 +181,6 @@ npm run test:cov
 
 ## Deployment
 
-### Docker Support
-
-The service can be containerized using the provided Dockerfile:
-
-```bash
-# Build image
-docker build -t email-service .
-
-# Run container
-docker run -p 3001:3001 --env-file .env email-service
-```
-
 ### Production Considerations
 
 1. **SMTP Configuration**: Use production SMTP service (SendGrid, AWS SES, etc.)

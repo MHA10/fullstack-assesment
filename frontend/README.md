@@ -107,7 +107,6 @@ This Next.js application can be deployed on:
 
 - **Vercel** (recommended): Automatic deployments from Git
 - **Netlify**: Static site hosting
-- **Docker**: Containerized deployment
 - **Traditional hosting**: Build and serve static files
 
 For Vercel deployment:

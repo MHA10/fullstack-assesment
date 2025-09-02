@@ -211,14 +211,7 @@ npm run build        # Build the application
 npm run lint         # Run ESLint
 ```
 
-## 🐳 Docker Support
 
-Each service includes Docker configuration for containerized deployment:
-
-```bash
-# Build and run with Docker Compose (if available)
-docker-compose up --build
-```
 
 ## 🔒 Security Features
 
