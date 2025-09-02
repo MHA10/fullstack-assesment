@@ -28,10 +28,12 @@ async function bootstrap(): Promise<void> {
     await setupMicroservice(app, logger);
 
     // Start HTTP server
-    const port = process.env.PORT || 3001;
+    const port = process.env.PORT || 4001;
     await app.listen(port);
     logger.log(`Email service is running on port ${port}`);
-    logger.log(`API documentation available at http://localhost:${port}/api/docs`);
+    logger.log(
+      `API documentation available at http://localhost:${port}/api/docs`,
+    );
   } catch (error) {
     logger.error('Failed to start application', error);
     process.exit(1);

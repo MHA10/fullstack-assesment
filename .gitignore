@@ -95,6 +95,24 @@ jspm_packages/
 
 # Next.js build output
 .next
+/.next/
+/out/
+next-env.d.ts
+
+# Vercel
+.vercel
+
+# Frontend specific
+/frontend/node_modules
+/frontend/.pnp
+/frontend/.pnp.*
+/frontend/.yarn/*
+!/frontend/.yarn/patches
+!/frontend/.yarn/plugins
+!/frontend/.yarn/releases
+!/frontend/.yarn/versions
+/frontend/coverage
+/frontend/build
 
 # Nuxt.js build / generate output
 .nuxt
