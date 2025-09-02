@@ -1,89 +1,49 @@
 import { NestFactory } from '@nestjs/core';
+import { Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
-import { ValidationPipe, Logger } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { databaseConfig } from './db/database.config';
-import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
-import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { CustomLogger } from './config/logger.config';
+import { setupGlobalConfiguration } from './config/app-setup.config';
+import { setupCorsAndSecurity } from './config/cors.config';
+import { setupSwagger } from './config/swagger.config';
+import { logDatabaseConnection } from './config/database-logging.config';
 
-async function bootstrap() {
+/**
+ * Bootstrap function to initialize and start the User Management API application
+ * Configures global settings, CORS, security headers, Swagger documentation, and database logging
+ */
+async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap');
 
-  const app = await NestFactory.create(AppModule, {
-    logger: new CustomLogger(),
-  });
+  try {
+    const app = await NestFactory.create(AppModule, {
+      logger: new CustomLogger(),
+    });
 
-  // Global exception filter
-  app.useGlobalFilters(new GlobalExceptionFilter());
+    // Configure global application settings
+    setupGlobalConfiguration(app);
 
-  // Global logging interceptor
-  app.useGlobalInterceptors(new LoggingInterceptor());
+    // Configure CORS and security headers
+    setupCorsAndSecurity(app);
 
-  // Global validation pipe
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true, // Strip properties that don't have decorators
-      forbidNonWhitelisted: true, // Throw error if non-whitelisted properties are present
-      transform: true, // Automatically transform payloads to DTO instances
-      skipMissingProperties: false, // Validate missing properties
-      disableErrorMessages: process.env.NODE_ENV === 'production',
-      validationError: {
-        target: false,
-        value: false,
-      },
-    }),
-  );
+    // Setup API documentation
+    setupSwagger(app);
 
-  // CORS configuration
-  app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-    credentials: true,
-  });
+    // Start HTTP server
+    const port = process.env.PORT || 3000;
+    await app.listen(port);
 
-  // Security headers
-  app.use((req, res, next) => {
-    res.header('X-Content-Type-Options', 'nosniff');
-    res.header('X-Frame-Options', 'DENY');
-    res.header('X-XSS-Protection', '1; mode=block');
-    next();
-  });
+    // Log database connection details
+    logDatabaseConnection(logger);
 
-  // Swagger API documentation
-  if (process.env.NODE_ENV !== 'production') {
-    const config = new DocumentBuilder()
-      .setTitle('User Management API')
-      .setDescription('API for managing users and sending email notifications')
-      .setVersion('1.0')
-      .addTag('users')
-      .build();
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/docs', app, document);
-  }
-
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
-
-  // Log database connection details
-  logger.log('🗄️  Database Connection Details:');
-  console.table({
-    Host: databaseConfig.host,
-    Port: databaseConfig.port,
-    Database: databaseConfig.database,
-    Username: databaseConfig.username,
-    Password: '*'.repeat(databaseConfig.password?.length || 0),
-  });
-  logger.log('');
-
-  logger.log(`🚀 Application is running on: http://localhost:${port}`);
-  if (process.env.NODE_ENV !== 'production') {
-    logger.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
+    // Log application startup information
+    logger.log(`🚀 Application is running on: http://localhost:${port}`);
+    if (process.env.NODE_ENV !== 'production') {
+      logger.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
+    }
+  } catch (error) {
+    logger.error('❌ Error starting server:', error);
+    process.exit(1);
   }
 }
 
-bootstrap().catch((error) => {
-  console.error('❌ Error starting server:', error);
-  process.exit(1);
-});
+bootstrap();

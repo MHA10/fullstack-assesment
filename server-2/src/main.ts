@@ -1,75 +1,41 @@
 import { NestFactory } from '@nestjs/core';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { ValidationPipe, Logger } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ConfigService } from '@nestjs/config';
+import { Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
-import { getRabbitmqConfig } from './config/email.config';
-import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
-import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { setupGlobalConfiguration } from './config/app-setup.config';
+import { setupCors } from './config/cors.config';
+import { setupSwagger } from './config/swagger.config';
+import { setupMicroservice } from './config/microservice.config';
 
-async function bootstrap() {
-  const logger = new Logger('EmailService');
-
-  // Create hybrid application (HTTP + Microservice)
+/**
+ * Bootstrap function to initialize and start the Email Service application
+ * Configures global settings, CORS, Swagger documentation, and RabbitMQ microservice
+ */
+async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap');
 
-  // Global pipes, filters, and interceptors
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-  app.useGlobalFilters(new GlobalExceptionFilter());
-  app.useGlobalInterceptors(new LoggingInterceptor());
+  try {
+    // Configure global application settings
+    setupGlobalConfiguration(app);
 
-  // Enable CORS
-  app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    credentials: true,
-  });
+    // Configure CORS
+    setupCors(app);
 
-  // Swagger documentation
-  const config = new DocumentBuilder()
-    .setTitle('Email Service API')
-    .setDescription('Microservice for handling email notifications')
-    .setVersion('1.0')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+    // Setup API documentation
+    setupSwagger(app);
 
-  // Get ConfigService and RabbitMQ config
-  const configService = app.get(ConfigService);
-  const rabbitmqConfig = getRabbitmqConfig(configService);
+    // Setup and start microservice
+    await setupMicroservice(app, logger);
 
-  // Connect microservice for RabbitMQ
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [rabbitmqConfig.url],
-      queue: rabbitmqConfig.queue,
-      queueOptions: {
-        durable: true,
-      },
-    },
-  });
-
-  // Start microservice
-  await app.startAllMicroservices();
-  logger.log('Email microservice started successfully');
-
-  // Start HTTP server
-  const port = process.env.PORT || 3001;
-  await app.listen(port);
-  logger.log(`Email service HTTP server running on port ${port}`);
-  logger.log(
-    `Swagger documentation available at http://localhost:${port}/api/docs`,
-  );
+    // Start HTTP server
+    const port = process.env.PORT || 3001;
+    await app.listen(port);
+    logger.log(`Email service is running on port ${port}`);
+    logger.log(`API documentation available at http://localhost:${port}/api/docs`);
+  } catch (error) {
+    logger.error('Failed to start application', error);
+    process.exit(1);
+  }
 }
 
-bootstrap().catch((error) => {
-  console.error('Failed to start email service:', error);
-  process.exit(1);
-});
+bootstrap();
